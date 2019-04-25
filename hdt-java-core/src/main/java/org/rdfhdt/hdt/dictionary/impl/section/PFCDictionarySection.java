@@ -37,6 +37,7 @@ import org.rdfhdt.hdt.compact.integer.VByte;
 import org.rdfhdt.hdt.compact.sequence.SequenceLog64;
 import org.rdfhdt.hdt.dictionary.DictionarySectionPrivate;
 import org.rdfhdt.hdt.dictionary.TempDictionarySection;
+import org.rdfhdt.hdt.dictionary.impl.BlankNodesManager;
 import org.rdfhdt.hdt.exceptions.CRCException;
 import org.rdfhdt.hdt.exceptions.IllegalFormatException;
 import org.rdfhdt.hdt.listener.ProgressListener;
@@ -107,6 +108,12 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 		try {
 			while(it.hasNext()) {
 				CharSequence str = it.next();
+				//TODO: hier müsste man wohl die blank nodes gesondert behandeln
+				if (str.toString().startsWith("_:")) {
+					str = BlankNodesManager.getNewId(str);
+//                    int n = Integer.parseInt(str.toString());
+//                    continue;
+				}
 
 				if(numstrings%blocksize==0) {
 					// Add new block pointer
