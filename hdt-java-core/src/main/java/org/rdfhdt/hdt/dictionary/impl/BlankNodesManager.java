@@ -9,8 +9,6 @@ import org.rdfhdt.hdt.util.string.CompactString;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -39,18 +37,6 @@ public class BlankNodesManager {
         }
     }
 
-    public static void saveCount() {
-        File file = new File(BLANK_NODES_FILE);
-        if(file.exists()){
-            file.delete();
-        }
-        try {
-            Files.write(Paths.get(file.getAbsolutePath()), String.valueOf(count).getBytes());
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-    }
-
 
     public static void main(String[] a){
         String baseURI = "http://example.com/mydataset";
@@ -71,7 +57,7 @@ public class BlankNodesManager {
 
             hdt.saveToHDT(output, null);
 
-            HDTManager.loadHDT(output, null);
+//            HDTManager.loadHDT(output, null);
 
 
         } catch (IOException e) {

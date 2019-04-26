@@ -111,7 +111,6 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 				//TODO: hier müsste man wohl die blank nodes gesondert behandeln
 				if (str.toString().startsWith("_:")) {
 					str = BlankNodesManager.getNewId(str);
-//                    int n = Integer.parseInt(str.toString());
 //                    continue;
 				}
 
