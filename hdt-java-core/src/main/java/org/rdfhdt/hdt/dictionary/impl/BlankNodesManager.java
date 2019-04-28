@@ -40,11 +40,18 @@ public class BlankNodesManager {
 
     public static void main(String[] a){
         String baseURI = "http://example.com/mydataset";
-        String rdfInput = "nuts-rdf-0.91 2.ttl";
+        String rdfInput = "/Users/philipfrerk/Downloads/short-abstracts_en_small.ttl";
 
         String inputType = "turtle"; //todo: careful
         String output = "file.hdt";
 
+        File file = new File(output);
+        if(file.exists()){
+            file.delete();
+        }
+
+
+        HuffmanCodeGenerator.findCharacterCounts(rdfInput);
         try {
 
             HDT hdt = HDTManager.generateHDT(
@@ -73,6 +80,22 @@ public class BlankNodesManager {
         if(f.exists()) {
             length += f.length();
         }
+
+        // literals
+        File fileLiterals = new File(HuffmanCodeGenerator.FILE_LITERALS);
+        if(fileLiterals.exists()){
+            length+=fileLiterals.length();
+        }
+        File fileTree = new File(HuffmanCodeGenerator.FILE_TREE);
+        if(fileTree.exists()){
+            length+=fileTree.length();
+        }
+
+        File fileChars = new File(HuffmanCodeGenerator.FILE_CHARS);
+        if(fileChars.exists()){
+            length+=fileChars.length();
+        }
+
 
         System.out.println("compr size: "+length);
         System.out.println("compr ratio: "+ 1.0*length / new File(rdfInput).length());

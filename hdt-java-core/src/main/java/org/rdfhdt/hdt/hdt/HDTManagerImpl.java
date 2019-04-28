@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
 
+import org.rdfhdt.hdt.dictionary.impl.HuffmanCodeGenerator;
 import org.rdfhdt.hdt.enums.RDFNotation;
 import org.rdfhdt.hdt.exceptions.NotFoundException;
 import org.rdfhdt.hdt.exceptions.ParserException;
@@ -99,6 +100,8 @@ public class HDTManagerImpl extends HDTManager {
 		HDTImpl hdt = new HDTImpl(spec); 
 		hdt.loadFromModifiableHDT(modHdt, listener);
 		hdt.populateHeaderStructure(modHdt.getBaseURI());
+
+		HuffmanCodeGenerator.storeData();
 		
 		// Add file size to Header
 		try {

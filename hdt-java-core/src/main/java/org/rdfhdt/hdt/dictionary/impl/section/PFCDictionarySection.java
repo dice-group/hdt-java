@@ -33,11 +33,14 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
 
+import org.apache.jena.base.Sys;
 import org.rdfhdt.hdt.compact.integer.VByte;
 import org.rdfhdt.hdt.compact.sequence.SequenceLog64;
 import org.rdfhdt.hdt.dictionary.DictionarySectionPrivate;
 import org.rdfhdt.hdt.dictionary.TempDictionarySection;
 import org.rdfhdt.hdt.dictionary.impl.BlankNodesManager;
+import org.rdfhdt.hdt.dictionary.impl.Huffman;
+import org.rdfhdt.hdt.dictionary.impl.HuffmanCodeGenerator;
 import org.rdfhdt.hdt.exceptions.CRCException;
 import org.rdfhdt.hdt.exceptions.IllegalFormatException;
 import org.rdfhdt.hdt.listener.ProgressListener;
@@ -108,11 +111,17 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 		try {
 			while(it.hasNext()) {
 				CharSequence str = it.next();
-				//TODO: hier müsste man wohl die blank nodes gesondert behandeln
 				if (str.toString().startsWith("_:")) {
+				    System.out.println("found blank node");
 					str = BlankNodesManager.getNewId(str);
 //                    continue;
 				}
+
+				else if(str.toString().startsWith("\"")){
+				    HuffmanCodeGenerator.addEncodedString(str);
+				    continue;
+                }
+
 
 				if(numstrings%blocksize==0) {
 					// Add new block pointer
