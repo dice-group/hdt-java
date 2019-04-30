@@ -37,7 +37,7 @@ public class HuffmanCodeGenerator {
         while (tripleExtendedIterator.hasNext()) {
             Node object = tripleExtendedIterator.next().getObject();
             if(object.isLiteral()) {
-                String s = object.getLiteral().toString();
+                String s = "\""+object.getLiteral().toString()+"\"";
                 for (int i = 0; i < s.length(); i++) {
                     char c = s.charAt(i);
                     if (mapCharToCount.containsKey(c)) {
@@ -51,11 +51,13 @@ public class HuffmanCodeGenerator {
 
         treeRoot = Huffman.buildTree(mapCharToCount);
         charCode = Huffman.generateCodes(mapCharToCount.keySet(), treeRoot);
+
+        System.out.println("Finished construction of Huffman Tree.");
     }
 
     public static void addEncodedString(CharSequence str){
         final StringBuilder binaryCode = new StringBuilder();
-        for (int i = 1; i < str.toString().length()-1; i++) {
+        for (int i = 0; i < str.toString().length(); i++) {
             char c = str.toString().charAt(i);
             String cCode = charCode.get(c);
             if(cCode==null){

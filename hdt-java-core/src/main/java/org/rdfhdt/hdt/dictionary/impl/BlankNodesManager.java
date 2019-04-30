@@ -14,6 +14,8 @@ import java.util.Map;
 
 public class BlankNodesManager {
 
+    public static final boolean HUFFMAN_ACTIVE = true;
+
     private static long count = 0;
     private static final Map<CharSequence,CharSequence> mapOldToNewId = new HashMap<>();
 
@@ -40,7 +42,7 @@ public class BlankNodesManager {
 
     public static void main(String[] a){
         String baseURI = "http://example.com/mydataset";
-        String rdfInput = "/Users/philipfrerk/Downloads/short-abstracts_en_small.ttl";
+        String rdfInput = "/Users/philipfrerk/Downloads/page-length_en_small.ttl";
 
         String inputType = "turtle"; //todo: careful
         String output = "file.hdt";
@@ -51,7 +53,9 @@ public class BlankNodesManager {
         }
 
 
-        HuffmanCodeGenerator.findCharacterCounts(rdfInput);
+        if(HUFFMAN_ACTIVE) {
+            HuffmanCodeGenerator.findCharacterCounts(rdfInput);
+        }
         try {
 
             HDT hdt = HDTManager.generateHDT(
@@ -64,7 +68,6 @@ public class BlankNodesManager {
 
             hdt.saveToHDT(output, null);
 
-//            HDTManager.loadHDT(output, null);
 
 
         } catch (IOException e) {

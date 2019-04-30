@@ -117,7 +117,7 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 //                    continue;
 				}
 
-				else if(str.toString().startsWith("\"")){
+				else if(BlankNodesManager.HUFFMAN_ACTIVE && str.toString().startsWith("\"")){
 				    HuffmanCodeGenerator.addEncodedString(str);
 				    continue;
                 }

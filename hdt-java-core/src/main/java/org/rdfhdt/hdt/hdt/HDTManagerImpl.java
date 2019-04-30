@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
 
+import org.rdfhdt.hdt.dictionary.impl.BlankNodesManager;
 import org.rdfhdt.hdt.dictionary.impl.HuffmanCodeGenerator;
 import org.rdfhdt.hdt.enums.RDFNotation;
 import org.rdfhdt.hdt.exceptions.NotFoundException;
@@ -101,7 +102,9 @@ public class HDTManagerImpl extends HDTManager {
 		hdt.loadFromModifiableHDT(modHdt, listener);
 		hdt.populateHeaderStructure(modHdt.getBaseURI());
 
-		HuffmanCodeGenerator.storeData();
+		if(BlankNodesManager.HUFFMAN_ACTIVE) {
+            HuffmanCodeGenerator.storeData();
+        }
 		
 		// Add file size to Header
 		try {
