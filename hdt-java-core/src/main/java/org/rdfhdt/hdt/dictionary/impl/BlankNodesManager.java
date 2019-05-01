@@ -14,7 +14,7 @@ import java.util.Map;
 
 public class BlankNodesManager {
 
-    public static final boolean HUFFMAN_ACTIVE = true;
+
 
     private static long count = 0;
     private static final Map<CharSequence,CharSequence> mapOldToNewId = new HashMap<>();
@@ -40,70 +40,6 @@ public class BlankNodesManager {
     }
 
 
-    public static void main(String[] a){
-        String baseURI = "http://example.com/mydataset";
-        String rdfInput = "/Users/philipfrerk/Downloads/page-length_en_small.ttl";
 
-        String inputType = "turtle"; //todo: careful
-        String output = "file.hdt";
-
-        File file = new File(output);
-        if(file.exists()){
-            file.delete();
-        }
-
-
-        if(HUFFMAN_ACTIVE) {
-            HuffmanCodeGenerator.findCharacterCounts(rdfInput);
-        }
-        try {
-
-            HDT hdt = HDTManager.generateHDT(
-                    rdfInput,         // Input RDF File
-                    baseURI,          // Base URI
-                    RDFNotation.parse(inputType), // Input Type
-                    new HDTSpecification(),   // HDT Options
-                    null              // Progress Listener
-            );
-
-            hdt.saveToHDT(output, null);
-
-
-
-        } catch (IOException e) {
-            e.printStackTrace();
-        } catch (ParserException e) {
-            e.printStackTrace();
-        }
-
-        long length = 0;
-        length+=new File(output).length();
-
-        File f = new File(BLANK_NODES_FILE);
-        if(f.exists()) {
-            length += f.length();
-        }
-
-        // literals
-        File fileLiterals = new File(HuffmanCodeGenerator.FILE_LITERALS);
-        if(fileLiterals.exists()){
-            length+=fileLiterals.length();
-        }
-        File fileTree = new File(HuffmanCodeGenerator.FILE_TREE);
-        if(fileTree.exists()){
-            length+=fileTree.length();
-        }
-
-        File fileChars = new File(HuffmanCodeGenerator.FILE_CHARS);
-        if(fileChars.exists()){
-            length+=fileChars.length();
-        }
-
-
-        System.out.println("compr size: "+length);
-        System.out.println("compr ratio: "+ 1.0*length / new File(rdfInput).length());
-
-
-    }
 }
 

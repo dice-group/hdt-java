@@ -33,14 +33,13 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.Iterator;
 
-import org.apache.jena.base.Sys;
 import org.rdfhdt.hdt.compact.integer.VByte;
 import org.rdfhdt.hdt.compact.sequence.SequenceLog64;
 import org.rdfhdt.hdt.dictionary.DictionarySectionPrivate;
 import org.rdfhdt.hdt.dictionary.TempDictionarySection;
 import org.rdfhdt.hdt.dictionary.impl.BlankNodesManager;
-import org.rdfhdt.hdt.dictionary.impl.Huffman;
-import org.rdfhdt.hdt.dictionary.impl.HuffmanCodeGenerator;
+import org.rdfhdt.hdt.dictionary.impl.Evaluator;
+import org.rdfhdt.hdt.dictionary.impl.HuffmanFacade;
 import org.rdfhdt.hdt.exceptions.CRCException;
 import org.rdfhdt.hdt.exceptions.IllegalFormatException;
 import org.rdfhdt.hdt.listener.ProgressListener;
@@ -67,20 +66,20 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 
 	public static final int TYPE_INDEX = 2;
 	public static final int DEFAULT_BLOCK_SIZE = 16;
-	
+
 	// FIXME: Due to java array indexes being int, only 2GB can be addressed per dictionary section.
 	protected byte [] text=new byte[0]; // Encoded sequence
 	protected int blocksize;
 	protected int numstrings;
 	protected SequenceLog64 blocks= new SequenceLog64();
-	
+
 	public PFCDictionarySection(HDTOptions spec) {
 		this.blocksize = (int) spec.getInt("pfc.blocksize");
 		if(blocksize==0) {
 			blocksize = DEFAULT_BLOCK_SIZE;
 		}
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see hdt.dictionary.DictionarySection#load(hdt.dictionary.DictionarySection)
 	 */
@@ -90,7 +89,7 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 		Iterator<? extends CharSequence> it = other.getSortedEntries();
 		this.load((Iterator<? extends CharSequence>)it, other.getNumberOfElements(), listener);
 	}
-	
+
 	public void load(PFCDictionarySectionBuilder builder) throws IOException {
 		builder.finished();
 		this.numstrings = builder.getNumstrings();
@@ -102,24 +101,32 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 	public void load(Iterator<? extends CharSequence> it, long numentries, ProgressListener listener) {
 		this.blocks = new SequenceLog64(32, numentries/blocksize);
 		this.numstrings = 0;
-		
-		
+
+
 		ByteArrayOutputStream byteOut = new ByteArrayOutputStream(16*1024);
-		
+
 		CharSequence previousStr=null;
-		
+
 		try {
 			while(it.hasNext()) {
 				CharSequence str = it.next();
 				if (str.toString().startsWith("_:")) {
-				    System.out.println("found blank node");
-					str = BlankNodesManager.getNewId(str);
-//                    continue;
+				    if(Evaluator.BLANK_SHORT_ACTIVE){
+                        str = BlankNodesManager.getNewId(str);
+                    }
+					if(Evaluator.BLANK_OMIT_ACTIVE) {
+                        continue;
+                    }
 				}
 
-				else if(BlankNodesManager.HUFFMAN_ACTIVE && str.toString().startsWith("\"")){
-				    HuffmanCodeGenerator.addEncodedString(str);
-				    continue;
+				else if(Evaluator.HUFFMAN_ACTIVE && str.toString().startsWith("\"")){
+
+                    boolean success = HuffmanFacade.addEncodedString(str);
+                    if(success) {
+                        continue;
+                    }else{
+                        System.out.println("Could not encode string: "+str);
+                    }
                 }
 
 
@@ -142,7 +149,7 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 				numstrings++;
 				previousStr = str;
 			}
-			
+
 			// Ending block pointer.
 			blocks.append(byteOut.size());
 
@@ -158,19 +165,19 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 			log.error("Unexpected exception.", e);
 		}
 	}
-		
+
 	protected int locateBlock(CharSequence str) {
 		if(blocks.getNumberOfElements()==0) {
 			return -1;
 		}
-		
+
 		int low = 0;
 		int high = (int)blocks.getNumberOfElements()-1;
 		int max = high;
-		
+
 		while (low <= high) {
 			int mid = (low + high) >>> 1;
-			
+
 			int cmp;
 			if(mid==max) {
 				cmp = -1;
@@ -179,7 +186,7 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 				cmp = ByteStringUtil.strcmp(str, text, pos);
 //				System.out.println("Comparing against block: "+ mid + " which is "+ ByteStringUtil.asString(text, pos)+ " Result: "+cmp);
 			}
-			
+
 			if (cmp<0) {
 				high = mid - 1;
 			} else if (cmp > 0) {
@@ -190,8 +197,8 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 		}
 		return -(low + 1);  // key not found.
 	}
-	
-	
+
+
 	/* (non-Javadoc)
 	 * @see hdt.dictionary.DictionarySection#locate(java.lang.CharSequence)
 	 */
@@ -200,7 +207,7 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 		if(text==null || blocks==null) {
 			return 0;
 		}
-		
+
 		int blocknum = locateBlock(str);
 		if(blocknum>=0) {
 			// Located exactly
@@ -208,7 +215,7 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 		} else {
 			// Not located exactly.
 			blocknum = -blocknum-2;
-			
+
 			if(blocknum>=0) {
 				int idblock = locateInBlock(blocknum, str);
 
@@ -217,50 +224,50 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 				}
 			}
 		}
-		
+
 		return 0;
 	}
-	
+
 	public int locateInBlock(int block, CharSequence str) {
 		if(block>=blocks.getNumberOfElements()) {
 			return 0;
 		}
-		
+
 		int pos = (int)blocks.get(block);
 		ReplazableString tempString = new ReplazableString();
-		
+
 		Mutable<Long> delta = new Mutable<>(0L);
 		int idInBlock = 0;
 		int cshared=0;
-		
+
 //		dumpBlock(block);
-		
+
 		// Read the first string in the block
 		int slen = ByteStringUtil.strlen(text, pos);
 		tempString.append(text, pos, slen);
 		pos+=slen+1;
 		idInBlock++;
-		
-		while( (idInBlock<blocksize) && (pos<text.length)) 
+
+		while( (idInBlock<blocksize) && (pos<text.length))
 		{
 			// Decode prefix
 			pos += VByte.decode(text, pos, delta);
-			
+
 			//Copy suffix
 			slen = ByteStringUtil.strlen(text, pos);
 			tempString.replace(delta.getValue().intValue(), text, pos, slen);
-			
+
 			if(delta.getValue()>=cshared)
 			{
 				// Current delta value means that this string
 				// has a larger long common prefix than the previous one
 				cshared += ByteStringUtil.longestCommonPrefix(tempString, str, cshared);
-				
+
 				if((cshared==str.length()) && (tempString.length()==str.length())) {
 					break;
 				}
 			} else {
-				// We have less common characters than before, 
+				// We have less common characters than before,
 				// this string is bigger that what we are looking for.
 				// i.e. Not found.
 				idInBlock = 0;
@@ -268,16 +275,16 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 			}
 			pos+=slen+1;
 			idInBlock++;
-			
+
 		}
 
 		if(pos>=text.length || idInBlock== blocksize) {
 			idInBlock=0;
 		}
-		
+
 		return idInBlock;
 	}
-	
+
 	/* (non-Javadoc)
 	 * @see hdt.dictionary.DictionarySection#extract(int)
 	 */
@@ -286,20 +293,20 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 		if(text==null || blocks==null) {
 			return null;
 		}
-		
+
 		if(id<1 || id>numstrings) {
 			return null;
 		}
-		
+
 		int block = (id-1)/blocksize;
 		int stringid = (id-1)%blocksize;
 		int pos = (int) blocks.get(block);
  		int len = ByteStringUtil.strlen(text, pos);
-		
+
 		Mutable<Long> delta = new Mutable<>(0L);
 		ReplazableString tempString = new ReplazableString();
 		tempString.append(text, pos, len);
-		
+
 		for(int i=0;i<stringid;i++) {
 			pos+=len+1;
 			pos += VByte.decode(text, pos, delta);
@@ -308,7 +315,7 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 		}
 		return new CompactString(tempString).getDelayed();
 	}
-	
+
 //	private void dumpAll() {
 //		for(int i=0;i<blocks.getNumberOfElements();i++) {
 //			dumpBlock(i);
@@ -386,7 +393,7 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 		 		if((id%blocksize)==0) {
 		 			len = ByteStringUtil.strlen(text, pos);
 		 			tempString.replace(0,text, pos, len);
-		 		} else {				
+		 		} else {
 					pos += VByte.decode(text, pos, delta);
 					len = ByteStringUtil.strlen(text, pos);
 					tempString.replace(delta.getValue().intValue(), text, pos, len);
@@ -409,16 +416,16 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 	@Override
 	public void save(OutputStream output, ProgressListener listener) throws IOException {
 		CRCOutputStream out = new CRCOutputStream(output, new CRC8());
-		
+
 		out.write(TYPE_INDEX);
 		VByte.encode(out, numstrings);
 		VByte.encode(out, text.length);
 		VByte.encode(out, blocksize);
-				
+
 		out.writeCRC();
 
 		blocks.save(output, listener);	// Write blocks directly to output, they have their own CRC check.
-		
+
 		out.setCRC(new CRC32());
 		IOUtil.writeBuffer(out, text, 0, text.length, listener);
 		out.writeCRC();
@@ -431,31 +438,31 @@ public class PFCDictionarySection implements DictionarySectionPrivate {
 	@Override
 	public void load(InputStream input, ProgressListener listener) throws IOException {
 		CRCInputStream in = new CRCInputStream(input, new CRC8());
-		
+
 		// Read type
 		int type = in.read();
 		if(type!=TYPE_INDEX) {
 			throw new IllegalFormatException("Trying to read a DictionarySectionPFC from data that is not of the suitable type");
 		}
-		
+
 		// Read vars
 		numstrings = (int) VByte.decode(in);
 		long bytes = VByte.decode(in);
-		blocksize = (int) VByte.decode(in);		
-	
+		blocksize = (int) VByte.decode(in);
+
 		if(!in.readCRCAndCheck()) {
 			throw new CRCException("CRC Error while reading Dictionary Section Plain Front Coding Header.");
 		}
-		
+
 		if(bytes>Integer.MAX_VALUE) {
 			input.reset();
-			throw new IllegalArgumentException("This class cannot process files with a packed buffer bigger than 2GB"); 
+			throw new IllegalArgumentException("This class cannot process files with a packed buffer bigger than 2GB");
 		}
-		
+
 		// Read blocks
 		blocks = new SequenceLog64();
 		blocks.load(input, listener);	// Read blocks from input, they have their own CRC check.
-		
+
 		// Read packed data
 		in.setCRC(new CRC32());
 		text = IOUtil.readBuffer(in, (int) bytes, listener);

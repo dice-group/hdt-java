@@ -11,7 +11,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
-public class HuffmanCodeGenerator {
+public class HuffmanFacade {
 
     public static final String FILE_LITERALS = "strings.ser";
     public static final String FILE_TREE = "tree.ser";
@@ -55,18 +55,20 @@ public class HuffmanCodeGenerator {
         System.out.println("Finished construction of Huffman Tree.");
     }
 
-    public static void addEncodedString(CharSequence str){
+    public static boolean addEncodedString(CharSequence str){
         final StringBuilder binaryCode = new StringBuilder();
         for (int i = 0; i < str.toString().length(); i++) {
             char c = str.toString().charAt(i);
             String cCode = charCode.get(c);
             if(cCode==null){
-                throw new RuntimeException("Unknown character: "+c);
+//                throw new RuntimeException("Unknown character: "+c);
+                return false;
             }
             binaryCode.append(cCode);
         }
 
         encodedStrings.add(binaryCode.toString());
+        return true;
     }
 
     public static void storeData(){
