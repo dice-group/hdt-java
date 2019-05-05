@@ -49,6 +49,7 @@ public class HuffmanFacade {
             }
         }
 
+        encodedStrings.clear();
         treeRoot = Huffman.buildTree(mapCharToCount);
         charCode = Huffman.generateCodes(mapCharToCount.keySet(), treeRoot);
 
@@ -61,7 +62,7 @@ public class HuffmanFacade {
             char c = str.toString().charAt(i);
             String cCode = charCode.get(c);
             if(cCode==null){
-//                throw new RuntimeException("Unknown character: "+c);
+                // this happens if the literal is combined with a URI
                 return false;
             }
             binaryCode.append(cCode);

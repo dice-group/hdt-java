@@ -117,6 +117,7 @@ public final class Huffman {
         int bitPosition;
     }
 
+
     /*
      * Algo:
      * 1. Access the node
@@ -157,14 +158,6 @@ public final class Huffman {
         preOrder(node.right, oosChar, bitSet, intObject);    // take the branch.
     }
 
-    private static void serializeMessage(String message, String filePath) throws IOException {
-        final BitSet bitSet = getBitSet(message);
-
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream(filePath))) {
-
-            oos.writeObject(bitSet);
-        }
-    }
 
     public static void serializeMessages(List<String> messages, String filePath){
 

@@ -6,10 +6,7 @@ import org.rdfhdt.hdt.hdt.HDTManager;
 import org.rdfhdt.hdt.options.HDTSpecification;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public class Evaluator {
 
@@ -28,17 +25,27 @@ public class Evaluator {
         mapSuffixToFormat.put("rdf", RDF_XML);
     }
 
+    public static File[] listSortedFilesOfDirectory(File dir){
+        File[] f = dir.listFiles();
+        Arrays.sort(f);
+        return f;
+    }
+
 
     public static void main(String[] a) {
         List<String> files = new ArrayList<>();
-        File dir = new File("/Users/philipfrerk/Downloads/semantic_weg_dog_food");
-        for(File f : dir.listFiles()){
+        File dir = new File("/Users/philipfrerk/Documents/RDF_data/DBPedia_abstracts");
+        File[] filesOfDirectory = listSortedFilesOfDirectory(dir);
+        for(File f : filesOfDirectory){
+            if(f.getName().contains("DS_Store")){
+                continue;
+            }
             files.add(f.getAbsolutePath());
         }
 
 
         List<CompressionResult> results = evaluateFiles(files);
-//        List<CompressionResult> results = evaluateFiles(new String[]{"/Users/philipfrerk/Downloads/semantic_weg_dog_food/iswc-2010-complete-alignments.rdf"});
+//        List<CompressionResult> results = evaluateFiles(new String[]{"/Users/philipfrerk/Downloads/DBPedia_abstracts/long-abstracts-en-uris_fr_small.ttl"});
 
         System.out.println("File names: ");
         for (CompressionResult result : results) {
@@ -61,8 +68,9 @@ public class Evaluator {
         if (!f.exists()) {
             throw new RuntimeException("file not existing: " + file);
         }
-        f.delete();
-        return f.length();
+        long length = f.length();
+//        f.delete();
+        return length;
     }
 
     private static String getFileSuffix(String filePath) {

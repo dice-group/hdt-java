@@ -47,8 +47,8 @@ public class Analyzer {
 
         double size = model.getGraph().size();
 
-        int literalAvgLength = (int)Math.floor(literalLengthSum/size);
-        int blankIdAvgLength = (int)Math.floor(blankNodeIdLengthSum/size);
+        double literalAvgLength = 1.0*literalLengthSum/size;
+        double blankIdAvgLength = 1.0*blankNodeIdLengthSum/size;
 
         return new FileInfo(literalCount/size, blankNodeCount/size,
                 literalAvgLength,blankIdAvgLength);
@@ -58,9 +58,9 @@ public class Analyzer {
 
     public static class FileInfo{
         public double literalRelativeAmount, blankNodeRelativeAmount;
-        public int literalAvgLength, blankNodeAvgLength;
+        public double literalAvgLength, blankNodeAvgLength;
 
-        public FileInfo(double literalRelativeAmount, double blankNodeRelativeAmount, int literalAvgLength, int blankNodeAvgLength) {
+        public FileInfo(double literalRelativeAmount, double blankNodeRelativeAmount, double literalAvgLength, double blankNodeAvgLength) {
             this.literalRelativeAmount = literalRelativeAmount;
             this.blankNodeRelativeAmount = blankNodeRelativeAmount;
             this.literalAvgLength = literalAvgLength;
@@ -70,9 +70,13 @@ public class Analyzer {
 
     public static void main(String[] a){
         List<String> files = new ArrayList<>();
-        File dir = new File("/Users/philipfrerk/Downloads/semantic_weg_dog_food");
-        for(File f : dir.listFiles()){
-            files.add(f.getAbsolutePath());
+        File dir = new File("/Users/philipfrerk/Documents/RDF_data/DBPedia_abstracts");
+        File[] filesOfDirectory = Evaluator.listSortedFilesOfDirectory(dir);
+
+        for(File f : filesOfDirectory){
+            if(!f.getName().toLowerCase().contains("ds_store")) {
+                files.add(f.getAbsolutePath());
+            }
         }
         List<FileInfo> fileInfos = new ArrayList<>();
         for(String file : files){
